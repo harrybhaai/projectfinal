@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Campus Placement Portal</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <a class="logo" href="index.html">Campus Placement Portal</a>
+      <nav>
+        <a href="index.html" class="active">Home</a>
+        <a href="register.html">Register</a>
+        <a href="companies.html">Companies</a>
+        <a href="apply.html">Apply</a>
+        <a href="applications.html">Applications</a>
+      </nav>
+    </div>
+  </header>
+
+  <section class="hero">
+    <h1>Campus Placement Portal</h1>
+    <p>Register your profile, explore company drives, and apply for your dream job — all in one place.</p>
+  </section>
+
+  <div class="container">
+    <div class="stats-bar">
+      <div class="stat-card"><div class="stat-number" id="statStudents">—</div><div class="stat-label">Students Registered</div></div>
+      <div class="stat-card"><div class="stat-number" id="statCompanies">—</div><div class="stat-label">Company Drives</div></div>
+      <div class="stat-card"><div class="stat-number" id="statApplications">—</div><div class="stat-label">Applications Submitted</div></div>
+    </div>
+
+    <div class="cards-grid">
+      <a href="register.html" class="feature-card"><h3>Student Registration</h3><p>Create your placement profile with academic details and skills.</p></a>
+      <a href="companies.html" class="feature-card"><h3>Company Drives</h3><p>Browse active recruitment drives with package and CGPA details.</p></a>
+      <a href="apply.html" class="feature-card"><h3>Apply for Jobs</h3><p>Apply for positions that match your CGPA and skill set.</p></a>
+      <a href="applications.html" class="feature-card"><h3>Track Applications</h3><p>View all submitted applications and their current status.</p></a>
+    </div>
+  </div>
+
+  <footer><p>&copy; 2026 Campus Placement Portal &mdash; Node.js &middot; MySQL &middot; MongoDB</p></footer>
+
+  <script>
+    const API = 'http://localhost:3000';
+    async function loadStats() {
+      try {
+        const [s, c, a] = await Promise.all([
+          fetch(`${API}/student/all`).then(r => r.json()),
+          fetch(`${API}/companies`).then(r => r.json()),
+          fetch(`${API}/applications`).then(r => r.json())
+        ]);
+        document.getElementById('statStudents').textContent    = s.success ? s.data.length : '—';
+        document.getElementById('statCompanies').textContent   = c.success ? c.data.length : '—';
+        document.getElementById('statApplications').textContent = a.success ? a.data.length : '—';
+      } catch (_) {}
+    }
+    loadStats();
+  </script>
+</body>
+</html>

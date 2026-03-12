@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Companies - Campus Placement Portal</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <a class="logo" href="index.html">Campus Placement Portal</a>
+      <nav>
+        <a href="index.html">Home</a>
+        <a href="register.html">Register</a>
+        <a href="companies.html" class="active">Companies</a>
+        <a href="apply.html">Apply</a>
+        <a href="applications.html">Applications</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="container">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px;">
+      <div class="page-header" style="margin:0;"><h2>Company Drives</h2><p>Active recruitment drives — check min. CGPA before applying.</p></div>
+      <button class="btn btn-secondary" onclick="load()">Refresh</button>
+    </div>
+
+    <div class="card spinner" id="spinner">Loading companies...</div>
+    <div class="alert alert-error" id="err"><span>Failed to load. Make sure backend is running.</span></div>
+    <div class="companies-grid" id="grid"></div>
+  </div>
+
+  <footer><p>&copy; 2026 Campus Placement Portal &mdash; Node.js &middot; MySQL &middot; MongoDB</p></footer>
+
+  <script>
+    const API = 'http://localhost:3000';
+    const esc = s => { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
+
+    async function load() {
+      const spinner = document.getElementById('spinner');
+      const grid    = document.getElementById('grid');
+      const err     = document.getElementById('err');
+      spinner.style.display = 'block'; grid.innerHTML = ''; err.classList.remove('show');
+      try {
+        const data = await fetch(`${API}/companies`).then(r => r.json());
+        spinner.style.display = 'none';
+        if (!data.success || !data.data.length) { grid.innerHTML = '<div class="card" style="text-align:center;color:#5f6368;">No drives available.</div>'; return; }
+        data.data.forEach(c => {
+          const el = document.createElement('div');
+          el.className = 'company-card';
+          el.innerHTML = `<div class="company-name">${esc(c.company_name)}</div>
+            <div class="company-role">${esc(c.role)}</div>
+            <div class="company-meta"><span>Min CGPA: <strong>${c.min_cgpa}</strong></span><span>Package: <strong>${esc(c.package)}</strong></span></div>
+            <a href="apply.html?company_id=${encodeURIComponent(c.id)}" class="btn btn-primary" style="font-size:13px;padding:7px 16px;">Apply Now</a>`;
+          grid.appendChild(el);
+        });
+      } catch { spinner.style.display = 'none'; err.classList.add('show'); }
+    }
+    load();
+  </script>
+</body>
+</html>

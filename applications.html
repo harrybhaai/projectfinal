@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Applications - Campus Placement Portal</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <a class="logo" href="index.html">Campus Placement Portal</a>
+      <nav>
+        <a href="index.html">Home</a>
+        <a href="register.html">Register</a>
+        <a href="companies.html">Companies</a>
+        <a href="apply.html">Apply</a>
+        <a href="applications.html" class="active">Applications</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="container">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px;">
+      <div class="page-header" style="margin:0;"><h2>Job Applications</h2><p>All submitted applications — stored in MongoDB.</p></div>
+      <button class="btn btn-secondary" onclick="load()">Refresh</button>
+    </div>
+
+    <div class="card spinner" id="spinner">Loading applications...</div>
+    <div class="alert alert-error" id="err" style="display:none;"><span>Cannot connect to server. Ensure backend is running on port 3000.</span></div>
+
+    <div class="card" id="tableCard" style="display:none;">
+      <div class="table-wrapper">
+        <table>
+          <thead><tr><th>#</th><th>Student</th><th>Roll No</th><th>Company</th><th>Role</th><th>Status</th><th>Date</th></tr></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card" id="emptyCard" style="display:none;text-align:center;color:#5f6368;padding:40px;">
+      No applications yet. <a href="apply.html" style="color:#1a73e8;">Apply for a job</a> to get started.
+    </div>
+  </div>
+
+  <footer><p>&copy; 2026 Campus Placement Portal &mdash; Node.js &middot; MySQL &middot; MongoDB</p></footer>
+
+  <script>
+    const API = 'http://localhost:3000';
+    const esc = s => { const d = document.createElement('div'); d.textContent = String(s ?? '--'); return d.innerHTML; };
+
+    async function load() {
+      const spinner   = document.getElementById('spinner');
+      const tableCard = document.getElementById('tableCard');
+      const emptyCard = document.getElementById('emptyCard');
+      const err       = document.getElementById('err');
+      const tbody     = document.getElementById('tbody');
+      spinner.style.display = 'block'; tableCard.style.display = emptyCard.style.display = err.style.display = 'none';
+      try {
+        const data = await fetch(`${API}/applications`).then(r => r.json());
+        spinner.style.display = 'none';
+        if (!data.success)          { err.style.display = 'flex'; return; }
+        if (!data.data.length)      { emptyCard.style.display = 'block'; return; }
+        const badge = s => s === 'Selected' ? 'badge-selected' : s === 'Rejected' ? 'badge-rejected' : 'badge-applied';
+        tbody.innerHTML = data.data.map((a, i) => `<tr>
+          <td>${i+1}</td><td>${esc(a.student_name)}</td><td>${esc(a.roll_no)}</td>
+          <td>${esc(a.company)}</td><td>${esc(a.role)}</td>
+          <td><span class="badge ${badge(a.status)}">${esc(a.status)}</span></td>
+          <td>${esc(a.application_date)}</td></tr>`).join('');
+        tableCard.style.display = 'block';
+      } catch { spinner.style.display = 'none'; err.style.display = 'flex'; }
+    }
+    load();
+  </script>
+</body>
+</html>

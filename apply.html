@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Apply - Campus Placement Portal</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <a class="logo" href="index.html">Campus Placement Portal</a>
+      <nav>
+        <a href="index.html">Home</a>
+        <a href="register.html">Register</a>
+        <a href="companies.html">Companies</a>
+        <a href="apply.html" class="active">Apply</a>
+        <a href="applications.html">Applications</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="page-header">
+      <h2>Apply for Job</h2>
+      <p>Look up your roll number, pick a company, and submit your application.</p>
+    </div>
+
+    <div class="card" style="max-width:600px;margin:0 auto;">
+      <div class="alert alert-success" id="successAlert"><span id="successMsg"></span></div>
+      <div class="alert alert-error"   id="errorAlert">  <span id="errorMsg"></span></div>
+
+      <form id="form" novalidate>
+        <div class="form-group">
+          <label>Roll Number <span class="required">*</span></label>
+          <div style="display:flex;gap:8px;">
+            <input type="text" id="roll_no" class="form-control" placeholder="e.g. CS2021001" style="flex:1;" autocomplete="off" />
+            <button type="button" class="btn btn-secondary" id="lookupBtn">Lookup</button>
+          </div>
+          <div class="error-msg" id="rollErr">Enter your roll number.</div>
+        </div>
+
+        <div class="student-info-box" id="infoBox">
+          <strong id="siName"></strong><br />
+          <small id="siDetails" style="color:#5f6368;"></small>
+        </div>
+
+        <div class="form-group">
+          <label>Company &amp; Role <span class="required">*</span></label>
+          <select id="company_id" class="form-control"><option value="">Loading...</option></select>
+          <div class="error-msg" id="companyErr">Select a company.</div>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-full" id="submitBtn">Submit Application</button>
+      </form>
+    </div>
+  </div>
+
+  <footer><p>&copy; 2026 Campus Placement Portal &mdash; Node.js &middot; MySQL &middot; MongoDB</p></footer>
+
+  <script>
+    const API = 'http://localhost:3000';
+
+    function alert_(type, msg) {
+      document.getElementById('successAlert').classList.remove('show');
+      document.getElementById('errorAlert').classList.remove('show');
+      if (!type) return;
+      document.getElementById(type === 'success' ? 'successMsg' : 'errorMsg').textContent = msg;
+      document.getElementById(type === 'success' ? 'successAlert' : 'errorAlert').classList.add('show');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    async function loadCompanies() {
+      try {
+        const data = await fetch(`${API}/companies`).then(r => r.json());
+        const sel  = document.getElementById('company_id');
+        sel.innerHTML = '<option value="">-- Select Company & Role --</option>';
+        if (data.success) data.data.forEach(c => {
+          const o = document.createElement('option');
+          o.value = c.id;
+          o.textContent = `${c.company_name} - ${c.role}  (Min CGPA: ${c.min_cgpa} | ${c.package})`;
+          sel.appendChild(o);
+        });
+        const preId = new URLSearchParams(location.search).get('company_id');
+        if (preId) sel.value = preId;
+      } catch { document.getElementById('company_id').innerHTML = '<option value="">Failed to load</option>'; }
+    }
+
+    document.getElementById('lookupBtn').addEventListener('click', async () => {
+      const roll = document.getElementById('roll_no').value.trim();
+      document.getElementById('rollErr').classList.remove('show');
+      document.getElementById('roll_no').classList.remove('error');
+      document.getElementById('infoBox').style.display = 'none';
+      alert_(null);
+      if (!roll) { document.getElementById('rollErr').classList.add('show'); document.getElementById('roll_no').classList.add('error'); return; }
+      const btn = document.getElementById('lookupBtn');
+      btn.disabled = true; btn.textContent = '...';
+      try {
+        const data    = await fetch(`${API}/student/all`).then(r => r.json());
+        const student = data.success && data.data.find(s => s.roll_no === roll.toUpperCase());
+        if (student) {
+          document.getElementById('siName').textContent    = 'Found: ' + student.name;
+          document.getElementById('siDetails').textContent = `${student.department} | CGPA: ${student.cgpa} | Skills: ${student.skills || 'N/A'}`;
+          document.getElementById('infoBox').style.display = 'block';
+        } else alert_('error', 'Student not found. Please register first.');
+      } catch { alert_('error', 'Cannot connect to server.'); }
+      finally { btn.disabled = false; btn.textContent = 'Lookup'; }
+    });
+
+    document.getElementById('form').addEventListener('submit', async e => {
+      e.preventDefault();
+      const roll = document.getElementById('roll_no').value.trim();
+      const cid  = document.getElementById('company_id').value;
+      let ok = true;
+      document.querySelectorAll('.error-msg').forEach(e => e.classList.remove('show'));
+      document.querySelectorAll('.form-control').forEach(e => e.classList.remove('error'));
+      if (!roll) { document.getElementById('rollErr').classList.add('show'); document.getElementById('roll_no').classList.add('error'); ok = false; }
+      if (!cid)  { document.getElementById('companyErr').classList.add('show'); document.getElementById('company_id').classList.add('error'); ok = false; }
+      if (!ok) return;
+
+      const btn = document.getElementById('submitBtn');
+      btn.disabled = true; btn.textContent = 'Submitting...';
+      try {
+        const data = await fetch(`${API}/apply`, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ roll_no: roll, company_id: cid }) }).then(r => r.json());
+        if (data.success) { alert_('success', data.message); document.getElementById('form').reset(); document.getElementById('infoBox').style.display = 'none'; loadCompanies(); }
+        else alert_('error', data.error || 'Application failed.');
+      } catch { alert_('error', 'Cannot connect to server.'); }
+      finally { btn.disabled = false; btn.textContent = 'Submit Application'; }
+    });
+
+    loadCompanies();
+  </script>
+</body>
+</html>

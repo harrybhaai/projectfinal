@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Register - Campus Placement Portal</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <a class="logo" href="index.html">Campus Placement Portal</a>
+      <nav>
+        <a href="index.html">Home</a>
+        <a href="register.html" class="active">Register</a>
+        <a href="companies.html">Companies</a>
+        <a href="apply.html">Apply</a>
+        <a href="applications.html">Applications</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="page-header">
+      <h2>Student Registration</h2>
+      <p>Fields marked <span class="required">*</span> are required.</p>
+    </div>
+
+    <div class="card" style="max-width:600px;margin:0 auto;">
+      <div class="alert alert-success" id="successAlert"><span id="successMsg"></span></div>
+      <div class="alert alert-error"   id="errorAlert">  <span id="errorMsg"></span></div>
+
+      <form id="form" novalidate>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Full Name <span class="required">*</span></label>
+            <input type="text" id="name" class="form-control" placeholder="e.g. Rahul Sharma" />
+            <div class="error-msg" id="nameErr">Enter your full name (min 2 chars).</div>
+          </div>
+          <div class="form-group">
+            <label>Roll Number <span class="required">*</span></label>
+            <input type="text" id="roll_no" class="form-control" placeholder="e.g. CS2021001" autocomplete="off" />
+            <div class="error-msg" id="rollErr">Enter a valid roll number.</div>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Department <span class="required">*</span></label>
+            <select id="department" class="form-control">
+              <option value="">Select Department</option>
+              <option>Computer Science</option>
+              <option>Information Technology</option>
+              <option>Electronics &amp; Communication</option>
+              <option>Mechanical Engineering</option>
+              <option>Civil Engineering</option>
+              <option>Electrical Engineering</option>
+            </select>
+            <div class="error-msg" id="deptErr">Select your department.</div>
+          </div>
+          <div class="form-group">
+            <label>CGPA <span class="required">*</span></label>
+            <input type="number" id="cgpa" class="form-control" placeholder="e.g. 8.5" min="0" max="10" step="0.01" />
+            <div class="error-msg" id="cgpaErr">Enter a CGPA between 0 and 10.</div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Skills <span style="color:#5f6368;font-weight:400;">(comma-separated)</span></label>
+          <input type="text" id="skills" class="form-control" placeholder="e.g. Java, Python, SQL" />
+        </div>
+        <button type="submit" class="btn btn-primary btn-full" id="submitBtn">Register Student</button>
+      </form>
+    </div>
+  </div>
+
+  <footer><p>&copy; 2026 Campus Placement Portal &mdash; Node.js &middot; MySQL &middot; MongoDB</p></footer>
+
+  <script>
+    const API = 'http://localhost:3000';
+
+    function alert_(type, msg) {
+      document.getElementById('successAlert').classList.remove('show');
+      document.getElementById('errorAlert').classList.remove('show');
+      document.getElementById(type === 'success' ? 'successMsg' : 'errorMsg').textContent = msg;
+      document.getElementById(type === 'success' ? 'successAlert' : 'errorAlert').classList.add('show');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function validate() {
+      let ok = true;
+      document.querySelectorAll('.error-msg').forEach(e => e.classList.remove('show'));
+      document.querySelectorAll('.form-control').forEach(e => e.classList.remove('error'));
+
+      const v = id => document.getElementById(id).value.trim();
+      if (v('name').length < 2)       { document.getElementById('nameErr').classList.add('show'); document.getElementById('name').classList.add('error'); ok = false; }
+      if (v('roll_no').length < 3)    { document.getElementById('rollErr').classList.add('show'); document.getElementById('roll_no').classList.add('error'); ok = false; }
+      if (!v('department'))           { document.getElementById('deptErr').classList.add('show'); document.getElementById('department').classList.add('error'); ok = false; }
+      const c = parseFloat(document.getElementById('cgpa').value);
+      if (isNaN(c) || c < 0 || c > 10) { document.getElementById('cgpaErr').classList.add('show'); document.getElementById('cgpa').classList.add('error'); ok = false; }
+      return ok;
+    }
+
+    document.getElementById('form').addEventListener('submit', async e => {
+      e.preventDefault();
+      if (!validate()) return;
+      const btn = document.getElementById('submitBtn');
+      btn.disabled = true; btn.textContent = 'Registering...';
+      try {
+        const res  = await fetch(`${API}/student/register`, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: document.getElementById('name').value.trim(), roll_no: document.getElementById('roll_no').value.trim(),
+            department: document.getElementById('department').value, cgpa: parseFloat(document.getElementById('cgpa').value),
+            skills: document.getElementById('skills').value.trim() }) });
+        const data = await res.json();
+        if (data.success) { alert_('success', data.message); document.getElementById('form').reset(); }
+        else alert_('error', data.error || 'Registration failed.');
+      } catch { alert_('error', 'Cannot connect to server. Ensure backend is running on port 3000.'); }
+      finally { btn.disabled = false; btn.textContent = 'Register Student'; }
+    });
+  </script>
+</body>
+</html>
